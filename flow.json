@@ -1,0 +1,182 @@
+{
+	"contracts": {
+		"BandOracleResolver": "./contracts/resolvers/BandOracleResolver.cdc",
+		"IStakingProtocol": "./contracts/interfaces/IStakingProtocol.cdc",
+		"IncrementAdapter": "./contracts/adapters/IncrementAdapter.cdc",
+		"IncrementFiStakingConnector": "./contracts/adapters/IncrementFiStakingConnector.cdc",
+		"PredictionMarket": "./contracts/core/PredictionMarket.cdc",
+		"TrixyEvents": "./contracts/core/TrixyEvents.cdc",
+		"TrixyProtocol": "./contracts/TrixyProtocol.cdc",
+		"TrixyTypes": "./contracts/core/TrixyTypes.cdc"
+	},
+	"dependencies": {
+		"BandOracle": {
+			"source": "mainnet://6801a6222ebf784a.BandOracle",
+			"hash": "be8c986f46eccfe55a25447e1b7fa07e95769ac4ca11918833130a4bf3297b16",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "6801a6222ebf784a",
+				"testnet": "2c71de7af78d1adf"
+			}
+		},
+		"Burner": {
+			"source": "mainnet://f233dcee88fe0abe.Burner",
+			"hash": "71af18e227984cd434a3ad00bb2f3618b76482842bae920ee55662c37c8bf331",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "f233dcee88fe0abe",
+				"testnet": "9a0766d93b6608b7"
+			}
+		},
+		"FlowToken": {
+			"source": "mainnet://1654653399040a61.FlowToken",
+			"hash": "cefb25fd19d9fc80ce02896267eb6157a6b0df7b1935caa8641421fe34c0e67a",
+			"aliases": {
+				"emulator": "0ae53cb6e3f42a79",
+				"mainnet": "1654653399040a61",
+				"testnet": "7e60df042a9c0868"
+			}
+		},
+		"FungibleToken": {
+			"source": "mainnet://f233dcee88fe0abe.FungibleToken",
+			"hash": "23c1159cf99b2b039b6b868d782d57ae39b8d784045d81597f100a4782f0285b",
+			"aliases": {
+				"emulator": "ee82856bf20e2aa6",
+				"mainnet": "f233dcee88fe0abe",
+				"testnet": "9a0766d93b6608b7"
+			}
+		},
+		"FungibleTokenMetadataViews": {
+			"source": "mainnet://f233dcee88fe0abe.FungibleTokenMetadataViews",
+			"hash": "dff704a6e3da83997ed48bcd244aaa3eac0733156759a37c76a58ab08863016a",
+			"aliases": {
+				"emulator": "ee82856bf20e2aa6",
+				"mainnet": "f233dcee88fe0abe",
+				"testnet": "9a0766d93b6608b7"
+			}
+		},
+		"MetadataViews": {
+			"source": "mainnet://1d7e57aa55817448.MetadataViews",
+			"hash": "9032f46909e729d26722cbfcee87265e4f81cd2912e936669c0e6b510d007e81",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "1d7e57aa55817448",
+				"testnet": "631e88ae7f1d7c20"
+			}
+		},
+		"NonFungibleToken": {
+			"source": "mainnet://1d7e57aa55817448.NonFungibleToken",
+			"hash": "b63f10e00d1a814492822652dac7c0574428a200e4c26cb3c832c4829e2778f0",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "1d7e57aa55817448",
+				"testnet": "631e88ae7f1d7c20"
+			}
+		},
+		"Staking": {
+			"source": "mainnet://1b77ba4b414de352.Staking",
+			"hash": "2faa0180c406f783165d6b2e3370076f126ac6a0e8b800ace55707e838147811",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "1b77ba4b414de352",
+				"testnet": "26a1e94319e81a3c"
+			}
+		},
+		"StakingError": {
+			"source": "mainnet://1b77ba4b414de352.StakingError",
+			"hash": "f76be3a19f8b640149fa0860316a34058b96c4ac2154486e337fd449306c730e",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "1b77ba4b414de352",
+				"testnet": "26a1e94319e81a3c"
+			}
+		},
+		"SwapConfig": {
+			"source": "mainnet://b78ef7afa52ff906.SwapConfig",
+			"hash": "ccafdb89804887e4e39a9b8fdff5c0ff0d0743505282f2a8ecf86c964e691c82",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "b78ef7afa52ff906",
+				"testnet": "8d5b9dd833e176da"
+			}
+		},
+		"SwapInterfaces": {
+			"source": "mainnet://b78ef7afa52ff906.SwapInterfaces",
+			"hash": "570bb4b9c8da8e0caa8f428494db80779fb906a66cc1904c39a2b9f78b89c6fa",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "b78ef7afa52ff906",
+				"testnet": "8d5b9dd833e176da"
+			}
+		},
+		"ViewResolver": {
+			"source": "mainnet://1d7e57aa55817448.ViewResolver",
+			"hash": "374a1994046bac9f6228b4843cb32393ef40554df9bd9907a702d098a2987bde",
+			"aliases": {
+				"emulator": "f8d6e0586b0a20c7",
+				"mainnet": "1d7e57aa55817448",
+				"testnet": "631e88ae7f1d7c20"
+			}
+		}
+	},
+	"networks": {
+		"emulator": "127.0.0.1:3569",
+		"mainnet": "access.mainnet.nodes.onflow.org:9000",
+		"testnet": "access.devnet.nodes.onflow.org:9000"
+	},
+	"accounts": {
+		"emulator-account": {
+			"address": "f8d6e0586b0a20c7",
+			"key": "dd72967fd2bd75234ae9037dd4694c1f00baad63a10c35172bf65fbb8ad74b47"
+		},
+		"mainnet-account": {
+			"address": "0x66bfb352ffc0111a",
+			"key": {
+				"type": "file",
+				"location": "mainnet-account.pkey"
+			}
+		},
+		"testnet-account": {
+			"address": "0xc12b3c10d6cf3b2a",
+			"key": {
+				"type": "file",
+				"location": "testnet-account.pkey"
+			}
+		}
+	},
+	"deployments": {
+		"emulator": {
+			"emulator-account": [
+				"TrixyTypes",
+				"TrixyEvents",
+				"IStakingProtocol",
+				"PredictionMarket",
+				"TrixyProtocol"
+			]
+		},
+		"mainnet": {
+			"mainnet-account": [
+				"TrixyTypes",
+				"TrixyEvents",
+				"IStakingProtocol",
+				"IncrementFiStakingConnector",
+				"IncrementAdapter",
+				"PredictionMarket",
+				"BandOracleResolver",
+				"TrixyProtocol"
+			]
+		},
+		"testnet": {
+			"testnet-account": [
+				"TrixyTypes",
+				"TrixyEvents",
+				"IStakingProtocol",
+				"IncrementFiStakingConnector",
+				"IncrementAdapter",
+				"PredictionMarket",
+				"BandOracleResolver",
+				"TrixyProtocol"
+			]
+		}
+	}
+}
