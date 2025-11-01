@@ -83,12 +83,15 @@ access(all) contract TrixyProtocol {
         access(all) fun createMarket(
             question: String,
             endTime: UFix64,
-            yieldProtocol: String
+            yieldProtocol: String,
+            resolutionMethod: TrixyTypes.ResolutionMethod,
+            oracleCriteria: TrixyTypes.OracleResolutionCriteria?
         ): UInt64 {
             pre {
                 !TrixyProtocol.paused: "Protocol is paused"
                 endTime > getCurrentBlock().timestamp: "End time must be in future"
                 endTime < getCurrentBlock().timestamp + 31536000.0: "Market duration max 1 year"
+                resolutionMethod == TrixyTypes.ResolutionMethod.Manual || oracleCriteria != nil: "Oracle criteria required for oracle resolution"
             }
 
             let marketId = TrixyProtocol.nextMarketId
@@ -100,7 +103,9 @@ access(all) contract TrixyProtocol {
                 endTime: endTime,
                 creator: self.owner! .address,
                 yieldProtocol: yieldProtocol,
-                protocolFee: TrixyProtocol.protocolFeePercent
+                protocolFee: TrixyProtocol.protocolFeePercent,
+                resolutionMethod: resolutionMethod,
+                oracleCriteria: oracleCriteria
             )
 
             self.markets[marketId] <-! market
@@ -149,6 +154,36 @@ access(all) contract TrixyProtocol {
             )
 
             market.resolveMarket(outcome: outcome)
+        }
+
+        access(all) fun resolveMarketWithOracle(marketId: UInt64, payment: @FlowToken.Vault) {
+            pre {
+                self.markets[marketId]!= nil: "Market not found"
+            }
+
+            let marketRef = &self.markets[marketId] as &PredictionMarket.MarketResource?
+            let market = marketRef!
+            let caller = self.owner!.address
+
+            // Only the market creator can trigger oracle resolution
+            assert(
+                market.creator == caller,
+                message: "Only market creator can trigger oracle resolution"
+            )
+
+            market.resolveMarketWithOracle(payment: <- payment, caller: caller)
+        }
+
+        access(all) fun resolveOracleMarketManually(marketId: UInt64, outcome: Bool, adminRef: &Admin) {
+            pre {
+                self.markets[marketId]!= nil: "Market not found"
+            }
+
+            let marketRef = &self.markets[marketId] as &PredictionMarket.MarketResource?
+            let market = marketRef!
+
+            // Admin reference confirms authorization - pass as optional
+            market.resolveOracleMarketManually(outcome: outcome, adminRef: adminRef)
         }
 
         access(all) fun claimWinnings(marketId: UInt64): @FlowToken.Vault {

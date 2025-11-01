@@ -8,6 +8,39 @@ access(all) contract TrixyTypes {
         access(all) case Cancelled
     }
 
+    access(all) enum ResolutionMethod: UInt8 {
+        access(all) case Manual
+        access(all) case Oracle
+        access(all) case Automatic
+    }
+
+    access(all) struct OracleResolutionCriteria {
+        access(all) let symbol: String
+        access(all) let targetPrice: UFix64
+        access(all) let comparisonType: String // "ABOVE", "BELOW", "BETWEEN"
+        access(all) let targetPrice2: UFix64?
+        access(all) let resolutionDeadline: UFix64
+
+        init(
+            symbol: String,
+            targetPrice: UFix64,
+            comparisonType: String,
+            targetPrice2: UFix64?,
+            resolutionDeadline: UFix64
+        ) {
+            pre {
+                comparisonType == "ABOVE" || comparisonType == "BELOW" || comparisonType == "BETWEEN": 
+                "Invalid comparison type"
+                resolutionDeadline > getCurrentBlock().timestamp: "Resolution deadline must be in the future"
+            }
+            self.symbol = symbol
+            self.targetPrice = targetPrice
+            self.comparisonType = comparisonType
+            self.targetPrice2 = targetPrice2
+            self.resolutionDeadline = resolutionDeadline
+        }
+    }
+
     access(all) enum ProtocolType: UInt8 {
         access(all) case Increment
     }
@@ -138,6 +171,8 @@ access(all) contract TrixyTypes {
         access(all) let totalNoShares: UFix64
         access(all) let totalYieldEarned: UFix64
         access(all) let totalPool: UFix64
+        access(all) let resolutionMethod: ResolutionMethod
+        access(all) let oracleCriteria: OracleResolutionCriteria?
 
         init(
             id: UInt64,
@@ -150,7 +185,9 @@ access(all) contract TrixyTypes {
             totalYesShares: UFix64,
             totalNoShares: UFix64,
             totalYieldEarned: UFix64,
-            totalPool: UFix64
+            totalPool: UFix64,
+            resolutionMethod: ResolutionMethod,
+            oracleCriteria: OracleResolutionCriteria?
         ) {
             self.id = id
             self.question = question
@@ -163,6 +200,8 @@ access(all) contract TrixyTypes {
             self.totalNoShares = totalNoShares
             self.totalYieldEarned = totalYieldEarned
             self.totalPool = totalPool
+            self.resolutionMethod = resolutionMethod
+            self.oracleCriteria = oracleCriteria
         }
     }
 

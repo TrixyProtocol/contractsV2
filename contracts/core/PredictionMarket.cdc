@@ -2,6 +2,8 @@ import "FlowToken"
 import "FungibleToken"
 import "TrixyEvents"
 import "TrixyTypes"
+import "IncrementAdapter"
+import "BandOracleResolver"
 
 access(all) contract PredictionMarket {
 
@@ -17,6 +19,8 @@ access(all) contract PredictionMarket {
 
         access(all) var status: TrixyTypes.MarketStatus
         access(all) var outcome: Bool?
+        access(all) let resolutionMethod: TrixyTypes.ResolutionMethod
+        access(all) let oracleCriteria: TrixyTypes.OracleResolutionCriteria?
 
         access(self) let vault: @FlowToken.Vault
 
@@ -27,6 +31,8 @@ access(all) contract PredictionMarket {
         access(self) let userPositions: {Address: TrixyTypes.BinaryPosition}
 
         access(self) let yieldVault: @FlowToken.Vault
+        access(self) var stakingPositionId: String?
+        access(self) let incrementAdapter: &IncrementAdapter
 
         init(
             id: UInt64,
@@ -34,11 +40,14 @@ access(all) contract PredictionMarket {
             endTime: UFix64,
             creator: Address,
             yieldProtocol: String,
-            protocolFee: UFix64
+            protocolFee: UFix64,
+            resolutionMethod: TrixyTypes.ResolutionMethod,
+            oracleCriteria: TrixyTypes.OracleResolutionCriteria?
         ) {
             pre {
                 endTime > getCurrentBlock().timestamp: "End time must be in future"
                 yieldProtocol == "aave" || yieldProtocol == "morpho" || yieldProtocol == "compound": "Invalid yield protocol"
+                resolutionMethod == TrixyTypes.ResolutionMethod.Manual || oracleCriteria != nil: "Oracle criteria required for oracle resolution"
             }
 
             self.id = id
@@ -49,9 +58,13 @@ access(all) contract PredictionMarket {
             self.yieldProtocol = yieldProtocol
             self.status = TrixyTypes.MarketStatus.Active
             self.outcome = nil
+            self.resolutionMethod = resolutionMethod
+            self.oracleCriteria = oracleCriteria
 
             self.vault <- FlowToken.createEmptyVault(vaultType: Type<@FlowToken.Vault>())
             self.yieldVault <- FlowToken.createEmptyVault(vaultType: Type<@FlowToken.Vault>())
+            self.stakingPositionId = nil
+            self.incrementAdapter = PredictionMarket.getIncrementAdapterRef()
 
             self.totalYesShares = 0.0
             self.totalNoShares = 0.0
@@ -115,11 +128,20 @@ access(all) contract PredictionMarket {
         access(self) fun depositToYieldProtocol(amount: UFix64) {
             let funds <- self.vault.withdraw(amount: amount) as! @FlowToken.Vault
 
-            self.yieldVault.deposit(from: <- funds)
+            // Stake funds using IncrementAdapter
+            if self.stakingPositionId == nil {
+                self.stakingPositionId = self.incrementAdapter.stake(vault: <- funds)
+            } else {
+                // For additional deposits, we need to create a new position or add to existing
+                // For now, let's create a new position and track total staked amount
+                let newPositionId = self.incrementAdapter.stake(vault: <- funds)
+                // We could track multiple positions or merge them - for simplicity using latest
+                self.stakingPositionId = newPositionId
+            }
 
             TrixyEvents.emitYieldDeposited(
                 marketId: self.id,
-                protocol: self.yieldProtocol,
+                protocol: "increment", // Update to show we're using Increment
                 amount: amount
             )
         }
@@ -128,6 +150,86 @@ access(all) contract PredictionMarket {
             pre {
                 self.status == TrixyTypes.MarketStatus.Active: "Market already resolved"
                 getCurrentBlock().timestamp >= self.endTime: "Market not ended"
+                self.resolutionMethod == TrixyTypes.ResolutionMethod.Manual: "Use resolveMarketWithOracle for oracle markets"
+            }
+
+            self.outcome = outcome
+            self.status = TrixyTypes.MarketStatus.Resolved
+
+            self.withdrawAllFromYieldProtocol()
+
+            let protocolAPYs: {String: UFix64} = {}
+            protocolAPYs["YES"] = 0.0
+            protocolAPYs["NO"] = 0.0
+
+            TrixyEvents.emitMarketResolved(
+                marketId: self.id,
+                winningOption: outcome ? "YES": "NO",
+                apys: protocolAPYs
+            )
+        }
+
+        access(all) fun resolveMarketWithOracle(payment: @FlowToken.Vault, caller: Address) {
+            pre {
+                self.status == TrixyTypes.MarketStatus.Active: "Market already resolved"
+                getCurrentBlock().timestamp >= self.endTime: "Market not ended"
+                self.resolutionMethod == TrixyTypes.ResolutionMethod.Oracle: "Market does not use oracle resolution"
+                self.oracleCriteria != nil: "No oracle criteria set"
+            }
+
+            let criteria = self.oracleCriteria!
+            
+            // Check if we're past the oracle resolution deadline
+            assert(
+                getCurrentBlock().timestamp <= criteria.resolutionDeadline,
+                message: "Oracle resolution deadline has passed. Use manual resolution fallback."
+            )
+            
+            // Convert criteria to BandOracleResolver format
+            let resolverCriteria = BandOracleResolver.ResolutionCriteria(
+                symbol: criteria.symbol,
+                targetPrice: criteria.targetPrice,
+                comparisonType: criteria.comparisonType,
+                targetPrice2: criteria.targetPrice2
+            )
+
+            let oracleResolver = PredictionMarket.getBandOracleResolverRef()
+            let result = oracleResolver.resolveMarket(
+                marketId: self.id,
+                criteria: resolverCriteria,
+                payment: <- payment,
+                caller: caller
+            )
+
+            if result["canResolve"] as! Bool {
+                let outcome = result["outcome"] as! Bool
+                self.outcome = outcome
+                self.status = TrixyTypes.MarketStatus.Resolved
+
+                self.withdrawAllFromYieldProtocol()
+
+                let protocolAPYs: {String: UFix64} = {}
+                protocolAPYs["YES"] = 0.0
+                protocolAPYs["NO"] = 0.0
+
+                TrixyEvents.emitMarketResolved(
+                    marketId: self.id,
+                    winningOption: outcome ? "YES": "NO",
+                    apys: protocolAPYs
+                )
+            } else {
+                panic("Oracle resolution failed: ".concat(result["error"] as? String ?? "Unknown error"))
+            }
+        }
+
+        access(all) fun resolveOracleMarketManually(outcome: Bool, adminRef: AnyStruct?) {
+            pre {
+                self.status == TrixyTypes.MarketStatus.Active: "Market already resolved"
+                getCurrentBlock().timestamp >= self.endTime: "Market not ended"
+                self.resolutionMethod == TrixyTypes.ResolutionMethod.Oracle: "Market does not use oracle resolution"
+                self.oracleCriteria != nil: "No oracle criteria set"
+                getCurrentBlock().timestamp > self.oracleCriteria!.resolutionDeadline: "Oracle resolution deadline has not passed"
+                adminRef != nil: "Only admin can manually resolve oracle markets after deadline"
             }
 
             self.outcome = outcome
@@ -147,25 +249,47 @@ access(all) contract PredictionMarket {
         }
 
         access(self) fun withdrawAllFromYieldProtocol() {
-            let balance = self.yieldVault.balance
-
-            if balance > 0.0 {
+            if let positionId = self.stakingPositionId {
                 let originalStake = self.totalYesShares + self.totalNoShares
-                let yieldEarned = balance > originalStake ? balance - originalStake: 0.0
-
+                
+                // Get current staked balance and rewards
+                let stakedBalance = self.incrementAdapter.getBalance(positionId: positionId)
+                let availableRewards = self.incrementAdapter.getAvailableRewards(positionId: positionId)
+                
+                // Claim rewards first
+                if availableRewards > 0.0 {
+                    let rewards <- self.incrementAdapter.claimRewards(positionId: positionId)
+                    self.yieldVault.deposit(from: <- rewards)
+                }
+                
+                // Unstake the principal
+                if stakedBalance > 0.0 {
+                    let unstaked <- self.incrementAdapter.unstake(amount: stakedBalance, positionId: positionId)
+                    self.yieldVault.deposit(from: <- unstaked)
+                }
+                
+                // Calculate total yield earned
+                let totalWithdrawn = self.yieldVault.balance
+                let yieldEarned = totalWithdrawn > originalStake ? totalWithdrawn - originalStake : 0.0
+                
                 if yieldEarned > 0.0 {
                     self.totalYieldEarned = yieldEarned
                 }
-
-                let withdrawn <- self.yieldVault.withdraw(amount: balance)
-                self.vault.deposit(from: <- withdrawn)
+                
+                // Move all funds from yield vault to main vault
+                if self.yieldVault.balance > 0.0 {
+                    let withdrawn <- self.yieldVault.withdraw(amount: self.yieldVault.balance)
+                    self.vault.deposit(from: <- withdrawn)
+                }
 
                 TrixyEvents.emitYieldWithdrawn(
                     marketId: self.id,
-                    protocol: self.yieldProtocol,
-                    amount: balance,
+                    protocol: "increment",
+                    amount: totalWithdrawn,
                     yieldEarned: yieldEarned
                 )
+                
+                self.stakingPositionId = nil
             }
         }
 
@@ -251,7 +375,9 @@ access(all) contract PredictionMarket {
                 totalYesShares: self.totalYesShares,
                 totalNoShares: self.totalNoShares,
                 totalYieldEarned: self.totalYieldEarned,
-                totalPool: self.vault.balance + self.yieldVault.balance
+                totalPool: self.vault.balance + self.yieldVault.balance,
+                resolutionMethod: self.resolutionMethod,
+                oracleCriteria: self.oracleCriteria
             )
         }
     }
@@ -262,7 +388,9 @@ access(all) contract PredictionMarket {
         endTime: UFix64,
         creator: Address,
         yieldProtocol: String,
-        protocolFee: UFix64
+        protocolFee: UFix64,
+        resolutionMethod: TrixyTypes.ResolutionMethod,
+        oracleCriteria: TrixyTypes.OracleResolutionCriteria?
     ): @MarketResource {
         return <- create MarketResource(
             id: id,
@@ -270,7 +398,21 @@ access(all) contract PredictionMarket {
             endTime: endTime,
             creator: creator,
             yieldProtocol: yieldProtocol,
-            protocolFee: protocolFee
+            protocolFee: protocolFee,
+            resolutionMethod: resolutionMethod,
+            oracleCriteria: oracleCriteria
         )
+    }
+
+    access(all) fun getIncrementAdapterRef(): &IncrementAdapter {
+        return getAccount(Type<IncrementAdapter>().address!)
+            .contracts.borrow<&IncrementAdapter>(name: "IncrementAdapter")
+            ?? panic("IncrementAdapter contract not found")
+    }
+
+    access(all) fun getBandOracleResolverRef(): &BandOracleResolver {
+        return getAccount(Type<BandOracleResolver>().address!)
+            .contracts.borrow<&BandOracleResolver>(name: "BandOracleResolver")
+            ?? panic("BandOracleResolver contract not found")
     }
 }
