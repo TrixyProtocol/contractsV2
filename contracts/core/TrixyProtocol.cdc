@@ -165,7 +165,6 @@ access(all) contract TrixyProtocol {
             let market = marketRef!
             let caller = self.owner!.address
 
-            // Only the market creator can trigger oracle resolution
             assert(
                 market.creator == caller,
                 message: "Only market creator can trigger oracle resolution"
@@ -182,7 +181,6 @@ access(all) contract TrixyProtocol {
             let marketRef = &self.markets[marketId] as &PredictionMarket.MarketResource?
             let market = marketRef!
 
-            // Admin reference confirms authorization - pass as optional
             market.resolveOracleMarketManually(outcome: outcome, adminRef: adminRef)
         }
 

@@ -6,7 +6,6 @@ access(all) var adminAccount: Test.TestAccount? = nil
 access(all) var userAccount: Test.TestAccount? = nil
 
 access(all) fun setup() {
-    // Deploy core dependencies first
     var err = Test.deployContract(
         name: "Burner",
         path: "../../imports/ecdea45f2cb55da5/Burner.cdc",
@@ -42,7 +41,6 @@ access(all) fun setup() {
     )
     Test.expect(err, Test.beNil())
     
-    // Deploy BandOracleResolver
     err = Test.deployContract(
         name: "BandOracleResolver",
         path: "../contracts/resolvers/BandOracleResolver.cdc",
@@ -50,7 +48,6 @@ access(all) fun setup() {
     )
     Test.expect(err, Test.beNil())
     
-    // Create test accounts
     adminAccount = Test.createAccount()
     userAccount = Test.createAccount()
 }

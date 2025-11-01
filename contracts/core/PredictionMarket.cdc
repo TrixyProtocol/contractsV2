@@ -128,20 +128,16 @@ access(all) contract PredictionMarket {
         access(self) fun depositToYieldProtocol(amount: UFix64) {
             let funds <- self.vault.withdraw(amount: amount) as! @FlowToken.Vault
 
-            // Stake funds using IncrementAdapter
             if self.stakingPositionId == nil {
                 self.stakingPositionId = self.incrementAdapter.stake(vault: <- funds)
             } else {
-                // For additional deposits, we need to create a new position or add to existing
-                // For now, let's create a new position and track total staked amount
                 let newPositionId = self.incrementAdapter.stake(vault: <- funds)
-                // We could track multiple positions or merge them - for simplicity using latest
                 self.stakingPositionId = newPositionId
             }
 
             TrixyEvents.emitYieldDeposited(
                 marketId: self.id,
-                protocol: "increment", // Update to show we're using Increment
+                protocol: "increment",
                 amount: amount
             )
         }
@@ -179,13 +175,11 @@ access(all) contract PredictionMarket {
 
             let criteria = self.oracleCriteria!
             
-            // Check if we're past the oracle resolution deadline
             assert(
                 getCurrentBlock().timestamp <= criteria.resolutionDeadline,
                 message: "Oracle resolution deadline has passed. Use manual resolution fallback."
             )
             
-            // Convert criteria to BandOracleResolver format
             let resolverCriteria = BandOracleResolver.ResolutionCriteria(
                 symbol: criteria.symbol,
                 targetPrice: criteria.targetPrice,
@@ -252,23 +246,19 @@ access(all) contract PredictionMarket {
             if let positionId = self.stakingPositionId {
                 let originalStake = self.totalYesShares + self.totalNoShares
                 
-                // Get current staked balance and rewards
                 let stakedBalance = self.incrementAdapter.getBalance(positionId: positionId)
                 let availableRewards = self.incrementAdapter.getAvailableRewards(positionId: positionId)
                 
-                // Claim rewards first
                 if availableRewards > 0.0 {
                     let rewards <- self.incrementAdapter.claimRewards(positionId: positionId)
                     self.yieldVault.deposit(from: <- rewards)
                 }
                 
-                // Unstake the principal
                 if stakedBalance > 0.0 {
                     let unstaked <- self.incrementAdapter.unstake(amount: stakedBalance, positionId: positionId)
                     self.yieldVault.deposit(from: <- unstaked)
                 }
                 
-                // Calculate total yield earned
                 let totalWithdrawn = self.yieldVault.balance
                 let yieldEarned = totalWithdrawn > originalStake ? totalWithdrawn - originalStake : 0.0
                 
@@ -276,7 +266,6 @@ access(all) contract PredictionMarket {
                     self.totalYieldEarned = yieldEarned
                 }
                 
-                // Move all funds from yield vault to main vault
                 if self.yieldVault.balance > 0.0 {
                     let withdrawn <- self.yieldVault.withdraw(amount: self.yieldVault.balance)
                     self.vault.deposit(from: <- withdrawn)

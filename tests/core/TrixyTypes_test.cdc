@@ -213,7 +213,15 @@ access(all) fun testPredictionMarketInfoInitialization() {
         totalYesShares: 1000.0,
         totalNoShares: 500.0,
         totalYieldEarned: 50.0,
-        totalPool: 1550.0
+        totalPool: 1550.0,
+        resolutionMethod: TrixyTypes.ResolutionMethod.Oracle,
+        oracleCriteria: TrixyTypes.OracleResolutionCriteria(
+            symbol: "BTC",
+            targetPrice: 100000.0,
+            comparisonType: "ABOVE",
+            targetPrice2: nil,
+            resolutionDeadline: endTime + 86400.0
+        )
     )
     
     Test.assertEqual(1 as UInt64, marketInfo.id)

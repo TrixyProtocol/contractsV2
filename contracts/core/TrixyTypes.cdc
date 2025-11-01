@@ -17,7 +17,7 @@ access(all) contract TrixyTypes {
     access(all) struct OracleResolutionCriteria {
         access(all) let symbol: String
         access(all) let targetPrice: UFix64
-        access(all) let comparisonType: String // "ABOVE", "BELOW", "BETWEEN"
+        access(all) let comparisonType: String
         access(all) let targetPrice2: UFix64?
         access(all) let resolutionDeadline: UFix64
 
