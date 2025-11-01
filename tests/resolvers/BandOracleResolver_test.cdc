@@ -11,7 +11,7 @@ access(all) var userAccount: Test.TestAccount? = nil
 access(all) fun setup() {
     var err = Test.deployContract(
         name: "Burner",
-        path: "../../imports/f233dcee88fe0abe/Burner.cdc",
+        path: "../mocks/Burner.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
