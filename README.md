@@ -1,35 +1,36 @@
-# Trixy Protocol - Cadence Contracts V2
+# **Trixy Protocol - Cadence Contracts V2**
 
 **Production-ready Cadence V2 upgrade for Flow mainnet deployment**
 
-🚧 **Status: Still Ongoing Development** 🚧
+🧪 **Status: Testing Phase (Pre-Audit)**
 
-> This is the upgraded version of the original Trixy Protocol Contracts V1, migrated to Contracts V2 for mainnet production deployment. The original V1 contracts remain operational on testnet for development and testing.
+> This version represents the upgraded Trixy Protocol smart contracts (V2), prepared for Flow mainnet deployment. The contracts are currently in testing and validation phase to ensure full stability and reliability before proceeding to external security audit and mainnet release.
 
-## Overview
+## **Overview**
 
-Trixy V2 is the production-ready upgrade of the Trixy prediction market protocol, fully compatible and optimized for Flow mainnet deployment. This version includes enhanced security, improved performance, and mainnet-ready configurations.
+Trixy V2 is the upgraded implementation of the Trixy prediction market protocol, optimized for Flow mainnet deployment. It introduces improved security, better gas efficiency, and modular architecture to support scalable, yield-generating prediction markets.
 
-## What's New in Contract V2
+## **What's New in Contract V2**
 
-### ✅ Contract V2 Compatibility
-- Updated access modifiers and type system
-- Enhanced security patterns
-- Improved resource handling
+### **Contract Enhancements**
+- Integrate with IncrementFiConnectors
+- Refined access control and resource type definitions  
+- Improved event handling and data integrity validation  
+- Strengthened security mechanisms and logic consistency  
 
-### 🏗️ Production Architecture
-- Mainnet-ready contract deployment configuration
-- Optimized gas usage and performance
-- Enhanced error handling and validation
-- Production-grade security patterns
+### **Mainnet Deployment Architecture**
+- Fully configured for Flow mainnet deployment  
+- Optimized transaction execution and gas usage  
+- Modular and maintainable contract structure  
+- Production-grade design, currently undergoing system testing  
 
-## Resources
+## **Resources**
 
-- **Original V1 Contracts**: [Contracts V1](https://github.com/TrixyProtocol/contracts)
-- **Flow Cadence Docs**: [docs.onflow.org](https://docs.onflow.org)
-- **Migration Guide**: [Flow Cadence Migration](https://cadence-lang.org/docs/cadence-migration-guide)
-- **Production Deployment**: [Flow Guide](https://developers.flow.com/)
+- **Original V1 Contracts**: [Contracts V1](https://github.com/TrixyProtocol/contracts)  
+- **Flow Cadence Docs**: [docs.onflow.org](https://docs.onflow.org)  
+- **Migration Guide**: [Cadence Migration](https://cadence-lang.org/docs/cadence-migration-guide)  
+- **Deployment Reference**: [Flow Mainnet Guide](https://developers.flow.com/)  
 
-## License
+## **License**
 
-MIT - 🚧 Under active development for Flow mainnet deployment
+MIT — Currently in testing phase prior to external audit and mainnet deployment.
