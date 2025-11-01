@@ -1,0 +1,54 @@
+name: Code Quality
+
+on:
+  push:
+    branches: [ dev, testing ]
+  pull_request:
+    branches: [ dev, testing ]
+
+jobs:
+  lint-and-format:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+
+      - name: Install Flow CLI
+        run: sh -ci "$(curl -fsSL https://raw.githubusercontent.com/onflow/flow-cli/master/install.sh)"
+
+      - name: Update PATH
+        run: echo "/root/.local/bin" >> $GITHUB_PATH
+
+      - name: Run Cadence linter
+        run: |
+          # Lint contracts and tests
+          flow cadence lint ./contracts/**/*.cdc
+          flow cadence lint ./tests/**/*.cdc
+
+  dependency-check:
+    name: Dependency Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+
+      - name: Install Flow CLI
+        run: sh -ci "$(curl -fsSL https://raw.githubusercontent.com/onflow/flow-cli/master/install.sh)"
+
+      - name: Update PATH
+        run: echo "/root/.local/bin" >> $GITHUB_PATH
+
+      - name: Install and check dependencies
+        run: |
+          flow deps install --skip-alias --skip-deployments
+          # Check for any dependency issues
+          flow project deploy --network=emulator --update

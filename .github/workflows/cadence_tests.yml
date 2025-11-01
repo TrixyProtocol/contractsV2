@@ -1,0 +1,52 @@
+name: CI
+
+on: 
+  push:
+    branches: [ dev, testing ]
+  pull_request:
+    branches: [ dev, testing ]
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Flow CLI Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21.x"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install Flow CLI
+        run: sh -ci "$(curl -fsSL https://raw.githubusercontent.com/onflow/flow-cli/master/install.sh)"
+
+      - name: Flow CLI Version
+        run: flow version
+
+      - name: Update PATH
+        run: echo "/root/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: flow deps install --skip-alias --skip-deployments
+
+      - name: Run tests
+        run: make ci
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.lcov
+          flags: cadence
+          name: cadence-coverage
+        if: always()

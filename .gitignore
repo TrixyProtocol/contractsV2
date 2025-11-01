@@ -3,3 +3,16 @@
 /scripts
 testnet-account.pkey
 mainnet-account.pkey
+
+.flow/
+
+coverage.lcov
+*.coverage
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
