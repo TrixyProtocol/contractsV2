@@ -1,12 +1,11 @@
 import Test
-import TrixyTypes from "../contracts/core/TrixyTypes.cdc"
+import "TrixyTypes"
 
 access(all)
 fun setup() {
-    let code = Test.readFile("../contracts/core/TrixyTypes.cdc")
     let err = Test.deployContract(
         name: "TrixyTypes",
-        code: code,
+        path: "../contracts/core/TrixyTypes.cdc",
         arguments: []
     )
     Test.expect(err, Test.beNil())
@@ -50,25 +49,15 @@ fun testBinaryPositionSetClaimed() {
 
 access(all)
 fun testProtocolType() {
-    let ankrType = TrixyTypes.ProtocolType.Ankr
     let incrementType = TrixyTypes.ProtocolType.Increment
-    let figmentType = TrixyTypes.ProtocolType.Figment
     
-    Test.assertEqual(TrixyTypes.ProtocolType.Ankr, ankrType)
     Test.assertEqual(TrixyTypes.ProtocolType.Increment, incrementType)
-    Test.assertEqual(TrixyTypes.ProtocolType.Figment, figmentType)
 }
 
 access(all)
 fun testGetProtocolType() {
-    let ankr = TrixyTypes.getProtocolType("Ankr")
-    Test.assertEqual(TrixyTypes.ProtocolType.Ankr, ankr)
-    
     let increment = TrixyTypes.getProtocolType("Increment")
     Test.assertEqual(TrixyTypes.ProtocolType.Increment, increment)
-    
-    let figment = TrixyTypes.getProtocolType("Figment")
-    Test.assertEqual(TrixyTypes.ProtocolType.Figment, figment)
     
     let unknown = TrixyTypes.getProtocolType("Unknown")
     Test.assertEqual(TrixyTypes.ProtocolType.Increment, unknown)

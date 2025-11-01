@@ -21,7 +21,7 @@ access(all) contract IncrementFiStakingConnector {
     /* --- STRUCTS --- */
 
     access(all) struct PoolInfo {
-            access(all) let pid: UInt64
+        access(all) let pid: UInt64
         access(all) let acceptTokenKey: String
         access(all) let rewardTokenKeys: [String]
         access(all) let limitAmount: UFix64
@@ -34,13 +34,13 @@ access(all) contract IncrementFiStakingConnector {
             limitAmount: UFix64,
             isActive: Bool
         ) {
-                self.pid = pid
+            self.pid = pid
             self.acceptTokenKey = acceptTokenKey
             self.rewardTokenKeys = rewardTokenKeys
             self.limitAmount = limitAmount
             self.isActive = isActive
-            }
         }
+    }
 
     /* --- PUBLIC FUNCTIONS --- */
 
@@ -49,33 +49,32 @@ access(all) contract IncrementFiStakingConnector {
         staker: Address,
         stakingVault: @ {FungibleToken.Vault}
     ) {
-            let depositAmount = stakingVault.balance
+        let depositAmount = stakingVault.balance
 
         if depositAmount == 0.0 {
-                destroy stakingVault
+            destroy stakingVault
             return
-            }
+        }
 
         let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                destroy stakingVault
+            destroy stakingVault
             return
-            }
+        }
 
         pool! .stake(staker: staker, stakingToken: <- stakingVault)
 
         emit PoolStaked(pid: pid, staker: staker, amount: depositAmount)
-        }
+    }
 
     access(all) fun claimRewards(
         pid: UInt64,
         userCertificate: &Staking.UserCertificate
     ): @ {FungibleToken.Vault} {
-
         let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
-            }
+            return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
+        }
 
         let rewardVaults <- pool! .claimRewards(userCertificate: userCertificate)
 
@@ -83,9 +82,9 @@ access(all) contract IncrementFiStakingConnector {
         let rewardTokenKeys = poolInfo.rewardsInfo.keys
 
         if rewardTokenKeys.length == 0 {
-                destroy rewardVaults
+            destroy rewardVaults
             return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
-            }
+        }
 
         let rewardTokenKey = rewardTokenKeys[0]
         let rewardVault <- rewardVaults.remove(key: rewardTokenKey)!
@@ -95,75 +94,75 @@ access(all) contract IncrementFiStakingConnector {
         emit RewardsClaimed(pid: pid, staker: userCertificate.owner! .address, amount: claimedAmount)
 
         return <- rewardVault
-        }
+    }
 
     access(all) fun unstake(
         pid: UInt64,
         userCertificate: &Staking.UserCertificate,
         amount: UFix64
     ): @ {FungibleToken.Vault} {
-            if amount == 0.0 {
-                return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
-            }
+        if amount == 0.0 {
+            return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
+        }
 
         let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
-            }
+            return <- FlowToken.createEmptyVault(vaultType: Type < @FlowToken.Vault > ())
+        }
 
         let unstaked <- pool! .unstake(userCertificate: userCertificate, amount: amount)
 
         emit PoolUnstaked(pid: pid, staker: userCertificate.owner! .address, amount: unstaked.balance)
 
         return <- unstaked
-        }
+    }
 
     access(all) fun borrowPool(pid: UInt64): & {Staking.PoolPublic}? {
-            let stakingAddress = Type < Staking > ().address!
+        let stakingAddress = Type < Staking > ().address!
         let poolCollectionCap = getAccount(stakingAddress)
-            .capabilities.get < &Staking.StakingPoolCollection > (Staking.CollectionPublicPath)
+        .capabilities.get < &Staking.StakingPoolCollection > (Staking.CollectionPublicPath)
 
         if! poolCollectionCap.check() {
-                return nil
-            }
-
-        return poolCollectionCap.borrow()?.getPool(pid: pid)
+            return nil
         }
 
+        return poolCollectionCap.borrow()?.getPool(pid: pid)
+    }
+
     access(all) fun getStakedAmount(pid: UInt64, staker: Address): UFix64 {
-            let pool = self.borrowPool(pid: pid)
+        let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                return 0.0
-            }
+            return 0.0
+        }
 
         let userInfo = pool! .getUserInfo(address: staker)
         return userInfo?.stakingAmount ?? 0.0
-        }
+    }
 
     access(all) fun getAvailableRewards(pid: UInt64, staker: Address): UFix64 {
-            let pool = self.borrowPool(pid: pid)
+        let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                return 0.0
-            }
+            return 0.0
+        }
 
         let userInfo = pool! .getUserInfo(address: staker)
         if userInfo == nil {
-                return 0.0
-            }
+            return 0.0
+        }
 
         var totalRewards = 0.0
         for rewardTokenKey in userInfo! .unclaimedRewards.keys {
-                totalRewards = totalRewards + (userInfo! .unclaimedRewards[rewardTokenKey] ?? 0.0)
-            }
-
-        return totalRewards
+            totalRewards = totalRewards + (userInfo! .unclaimedRewards[rewardTokenKey] ?? 0.0)
         }
 
+        return totalRewards
+    }
+
     access(all) fun getPoolInfo(pid: UInt64): PoolInfo? {
-            let pool = self.borrowPool(pid: pid)
+        let pool = self.borrowPool(pid: pid)
         if pool == nil {
-                return nil
-            }
+            return nil
+        }
 
         let poolData = pool! .getPoolInfo()
 
@@ -174,10 +173,10 @@ access(all) contract IncrementFiStakingConnector {
             limitAmount: poolData.limitAmount,
             isActive: poolData.status!= "ENDED" && poolData.status!= "CLEARED"
         )
-        }
+    }
 
     init() {
-            self.StakingPositionStoragePath = /storage/IncrementFiStakingPosition
+        self.StakingPositionStoragePath = /storage/IncrementFiStakingPosition
         self.StakingPositionPublicPath = /public/IncrementFiStakingPosition
-        }
     }
+}

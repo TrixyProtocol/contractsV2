@@ -1,4 +1,3 @@
-
 import "FlowToken"
 import "FungibleToken"
 import "IStakingProtocol"
@@ -24,7 +23,7 @@ access(all) contract IncrementAdapter: IStakingProtocol {
     /* --- STRUCTS --- */
 
     access(all) struct PositionMetadata {
-            access(all) let positionId: String
+        access(all) let positionId: String
         access(all) let staker: Address
         access(all) let pid: UInt64
         access(all) let initialAmount: UFix64
@@ -42,11 +41,11 @@ access(all) contract IncrementAdapter: IStakingProtocol {
     /* --- PUBLIC FUNCTIONS --- */
 
     access(all) fun stake(vault: @FlowToken.Vault): String {
-            return self.stakeToPool(vault: <- vault, pid: self.defaultPoolId, staker: self.account.address)
-        }
+        return self.stakeToPool(vault: <- vault, pid: self.defaultPoolId, staker: self.account.address)
+    }
 
     access(all) fun stakeToPool(vault: @FlowToken.Vault, pid: UInt64, staker: Address): String {
-            let amount = vault.balance
+        let amount = vault.balance
         let positionId = "increment_".concat(self.nextPositionId.toString())
         self.nextPositionId = self.nextPositionId + 1
 
@@ -66,13 +65,13 @@ access(all) contract IncrementAdapter: IStakingProtocol {
         emit PositionCreated(positionId: positionId, staker: staker, amount: amount, pid: pid)
 
         return positionId
-        }
+    }
 
     access(all) fun unstake(amount: UFix64, positionId: String): @FlowToken.Vault {
-            pre {
-                self.positionMetadata[positionId] != nil: "Position not found"
+        pre {
+            self.positionMetadata[positionId] != nil: "Position not found"
             amount > 0.0: "Amount must be greater than 0"
-            }
+        }
 
         let metadata = self.positionMetadata[positionId]!
 
@@ -91,12 +90,12 @@ access(all) contract IncrementAdapter: IStakingProtocol {
         emit PositionUnstaked(positionId: positionId, amount: unstaked.balance)
 
         return <- unstaked
-        }
+    }
 
     access(all) fun claimRewards(positionId: String): @FlowToken.Vault {
-            pre {
-                self.positionMetadata[positionId] != nil: "Position not found"
-            }
+        pre {
+            self.positionMetadata[positionId] != nil: "Position not found"
+        }
 
         let metadata = self.positionMetadata[positionId]!
 
@@ -114,16 +113,16 @@ access(all) contract IncrementAdapter: IStakingProtocol {
         emit RewardsClaimed(positionId: positionId, amount: rewards.balance)
 
         return <- rewards
-        }
+    }
 
     access(all) fun getCurrentAPY(): UFix64 {
-            return self.mockAPY
-        }
+        return self.mockAPY
+    }
 
     access(all) fun getBalance(positionId: String): UFix64 {
-            if self.positionMetadata[positionId] == nil {
-                return 0.0
-            }
+    if self.positionMetadata[positionId] == nil {
+        return 0.0
+    }
 
         let metadata = self.positionMetadata[positionId]!
         return IncrementFiStakingConnector.getStakedAmount(pid: metadata.pid, staker: metadata.staker)

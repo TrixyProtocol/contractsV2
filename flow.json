@@ -1,13 +1,53 @@
 {
 	"contracts": {
-		"BandOracleResolver": "./contracts/resolvers/BandOracleResolver.cdc",
-		"IStakingProtocol": "./contracts/interfaces/IStakingProtocol.cdc",
-		"IncrementAdapter": "./contracts/adapters/IncrementAdapter.cdc",
-		"IncrementFiStakingConnector": "./contracts/adapters/IncrementFiStakingConnector.cdc",
-		"PredictionMarket": "./contracts/core/PredictionMarket.cdc",
-		"TrixyEvents": "./contracts/core/TrixyEvents.cdc",
-		"TrixyProtocol": "./contracts/TrixyProtocol.cdc",
-		"TrixyTypes": "./contracts/core/TrixyTypes.cdc"
+		"BandOracleResolver": {
+			"source": "./contracts/resolvers/BandOracleResolver.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"IStakingProtocol": {
+			"source": "./contracts/interfaces/IStakingProtocol.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"IncrementAdapter": {
+			"source": "./contracts/adapters/IncrementAdapter.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"IncrementFiStakingConnector": {
+			"source": "./contracts/adapters/IncrementFiStakingConnector.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"PredictionMarket": {
+			"source": "./contracts/core/PredictionMarket.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"TrixyEvents": {
+			"source": "./contracts/core/TrixyEvents.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"TrixyProtocol": {
+			"source": "./contracts/TrixyProtocol.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
+		"TrixyTypes": {
+			"source": "./contracts/core/TrixyTypes.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		}
 	},
 	"dependencies": {
 		"BandOracle": {
@@ -34,7 +74,8 @@
 			"aliases": {
 				"emulator": "0ae53cb6e3f42a79",
 				"mainnet": "1654653399040a61",
-				"testnet": "7e60df042a9c0868"
+				"testnet": "7e60df042a9c0868",
+				"testing": "0000000000000007"
 			}
 		},
 		"FungibleToken": {
@@ -43,7 +84,8 @@
 			"aliases": {
 				"emulator": "ee82856bf20e2aa6",
 				"mainnet": "f233dcee88fe0abe",
-				"testnet": "9a0766d93b6608b7"
+				"testnet": "9a0766d93b6608b7",
+				"testing": "0000000000000007"
 			}
 		},
 		"FungibleTokenMetadataViews": {
@@ -122,7 +164,8 @@
 	"networks": {
 		"emulator": "127.0.0.1:3569",
 		"mainnet": "access.mainnet.nodes.onflow.org:9000",
-		"testnet": "access.devnet.nodes.onflow.org:9000"
+		"testnet": "access.devnet.nodes.onflow.org:9000",
+		"testing": "127.0.0.1:8080"
 	},
 	"accounts": {
 		"emulator-account": {

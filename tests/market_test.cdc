@@ -1,6 +1,6 @@
 import Test
 import "PredictionMarket"
-import "TrixyTypes"
+import "TrixyTypes" 
 import "TrixyEvents"
 import "FlowToken"
 

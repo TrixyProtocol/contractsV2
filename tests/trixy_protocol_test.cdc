@@ -54,5 +54,5 @@ access(all) fun testCreateMarketCollection() {
 
 access(all) fun testGetAdminAddress() {
     let adminAddress = TrixyProtocol.getAdminAddress()
-    Test.expect(adminAddress, Test.beNil())
+    Test.assertEqual(0x0000000000000007 as Address, adminAddress)
 }

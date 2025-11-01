@@ -1,5 +1,7 @@
 access(all) contract TrixyEvents {
 
+    /* --- EVENTS --- */
+
     access(all) event ContractInitialized()
 
     access(all) event MarketCreated(
@@ -49,30 +51,30 @@ access(all) contract TrixyEvents {
     )
 
     access(all) fun emitMarketCreated(marketId: UInt64, question: String, endTime: UFix64, options: [String], yieldProtocol: String, creator: Address) {
-            emit MarketCreated(marketId: marketId, question: question, endTime: endTime, options: options, yieldProtocol: yieldProtocol, creator: creator)
-        }
+        emit MarketCreated(marketId: marketId, question: question, endTime: endTime, options: options, yieldProtocol: yieldProtocol, creator: creator)
+    }
 
     access(all) fun emitBetPlaced(marketId: UInt64, user: Address, selectedOption: String, amount: UFix64) {
-            emit BetPlaced(marketId: marketId, user: user, selectedOption: selectedOption, amount: amount, timestamp: getCurrentBlock().timestamp)
-        }
+        emit BetPlaced(marketId: marketId, user: user, selectedOption: selectedOption, amount: amount, timestamp: getCurrentBlock().timestamp)
+    }
 
     access(all) fun emitMarketResolved(marketId: UInt64, winningOption: String, apys: {String: UFix64}) {
-            emit MarketResolved(marketId: marketId, winningOption: winningOption, finalAPYs: apys, resolvedAt: getCurrentBlock().timestamp)
-        }
+        emit MarketResolved(marketId: marketId, winningOption: winningOption, finalAPYs: apys, resolvedAt: getCurrentBlock().timestamp)
+    }
 
     access(all) fun emitWinningsClaimed(marketId: UInt64, user: Address, payout: UFix64) {
-            emit WinningsClaimed(marketId: marketId, user: user, payout: payout, timestamp: getCurrentBlock().timestamp)
-        }
+        emit WinningsClaimed(marketId: marketId, user: user, payout: payout, timestamp: getCurrentBlock().timestamp)
+    }
 
     access(all) fun emitYieldDeposited(marketId: UInt64, protocol: String, amount: UFix64) {
-            emit YieldDeposited(marketId: marketId, protocol: protocol, amount: amount, timestamp: getCurrentBlock().timestamp)
-        }
+        emit YieldDeposited(marketId: marketId, protocol: protocol, amount: amount, timestamp: getCurrentBlock().timestamp)
+    }
 
     access(all) fun emitYieldWithdrawn(marketId: UInt64, protocol: String, amount: UFix64, yieldEarned: UFix64) {
-            emit YieldWithdrawn(marketId: marketId, protocol: protocol, amount: amount, yieldEarned: yieldEarned, timestamp: getCurrentBlock().timestamp)
-        }
+        emit YieldWithdrawn(marketId: marketId, protocol: protocol, amount: amount, yieldEarned: yieldEarned, timestamp: getCurrentBlock().timestamp)
+    }
 
     init() {
-            emit ContractInitialized()
-        }
+        emit ContractInitialized()
     }
+}
