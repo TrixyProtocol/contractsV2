@@ -19,7 +19,7 @@ access(all) contract BandOracleResolver {
     access(self) var supportedAssets: {String: AssetConfig}
     access(self) var rateLimits: {Address: {UInt64: UInt64}}
     access(self) var admin: Address
-    access(self) var feeSource: {DeFiActions.Source}?
+    access(self) var feeSource: {DeFiActions.Source, DeFiActions.IdentifiableStruct}?
 
     /* --- EVENTS --- */
 
@@ -151,7 +151,7 @@ access(all) contract BandOracleResolver {
             emit ResolverUnpaused(admin: BandOracleResolver.admin, timestamp: getCurrentBlock().timestamp)
         }
 
-        access(all) fun setFeeSource(feeSource: {DeFiActions.Source}) {
+        access(all) fun setFeeSource(feeSource: {DeFiActions.Source, DeFiActions.IdentifiableStruct}) {
             pre {
                 feeSource.getSourceType() == Type<@FlowToken.Vault>(): "Fee source must provide FlowToken"
             }
@@ -337,7 +337,8 @@ access(all) contract BandOracleResolver {
                         outcome: false,
                         currentPrice: currentPrice,
                         dataTimestamp: nil,
-                        error: "Price \(currentPrice) outside expected range [\(assetConfig.minPrice), \(assetConfig.maxPrice)]")
+                        error: "Price ".concat(currentPrice.toString()).concat(" outside expected range [").concat(assetConfig.minPrice.toString()).concat(", ").concat(assetConfig.maxPrice.toString()).concat("]")
+                    )
                     return self.oracleResultToDict(result)
                 }
                 

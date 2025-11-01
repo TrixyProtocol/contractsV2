@@ -1,5 +1,8 @@
 import Test
 import BlockchainHelpers
+import "BandOracleResolver"
+import "FlowToken"
+import "FungibleToken"
 
 access(all) let serviceAccount = Test.serviceAccount()
 access(all) var adminAccount: Test.TestAccount? = nil
@@ -8,42 +11,35 @@ access(all) var userAccount: Test.TestAccount? = nil
 access(all) fun setup() {
     var err = Test.deployContract(
         name: "Burner",
-        path: "../../imports/ecdea45f2cb55da5/Burner.cdc",
-        arguments: [],
-    )
-    Test.expect(err, Test.beNil())
-    
-    err = Test.deployContract(
-        name: "DeFiActionsUtils",
-        path: "../../../FlowActions/cadence/contracts/utils/DeFiActionsUtils.cdc",
+        path: "../../imports/f233dcee88fe0abe/Burner.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
     
     err = Test.deployContract(
         name: "DeFiActions",
-        path: "../../../FlowActions/cadence/contracts/interfaces/DeFiActions.cdc",
+        path: "../mocks/DeFiActions.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
     
     err = Test.deployContract(
         name: "BandOracle",
-        path: "../../../imports/6801a6222ebf784a/BandOracle.cdc",
+        path: "../mocks/BandOracle.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
     
     err = Test.deployContract(
         name: "BandOracleConnectors",
-        path: "../../../FlowActions/cadence/contracts/connectors/band-oracle/BandOracleConnectors.cdc",
+        path: "../mocks/BandOracleConnectors.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
     
     err = Test.deployContract(
         name: "BandOracleResolver",
-        path: "../contracts/resolvers/BandOracleResolver.cdc",
+        path: "../../contracts/resolvers/BandOracleResolver.cdc",
         arguments: [],
     )
     Test.expect(err, Test.beNil())
@@ -52,231 +48,219 @@ access(all) fun setup() {
     userAccount = Test.createAccount()
 }
 
-// Test 1: Deployment success
-access(all) fun testDeploymentSuccess() {
-    log("BandOracleResolver deployment success")
-    log("Contract deployed with:")
-    log("  - MAX_DATA_AGE: 300 seconds (5 minutes)")
-    log("  - MIN_PAYMENT: 0.001 FLOW")
-    log("  - MAX_CALLS_PER_HOUR: 100")
-    log("  - Initial oracle fee: 0.001 FLOW")
-    log("  - FLOW asset pre-configured")
-}
-
-// Test 2: Get supported symbols
+// Test basic functionality
 access(all) fun testGetSupportedSymbols() {
-    log("Testing getSupportedSymbols() function")
-    log("Expected: [\"FLOW\"]")
-    log("FLOW asset is enabled by default with:")
-    log("  - Min price: 0.01")
-    log("  - Max price: 1000.0")
-    log("  - Precision: 8")
+    let symbols = BandOracleResolver.getSupportedSymbols()
+    Test.assertEqual(true, symbols.length > 0)
+    Test.assertEqual(true, symbols.contains("FLOW"))
 }
 
-// Test 3: Get oracle fee structure
-access(all) fun testOracleFeeStructure() {
-    log("Oracle fee structure:")
-    log("  - Base resolver fee: 0.001 FLOW")
-    log("  - BandOracle fee: Retrieved dynamically via BandOracle.getFee()")
-    log("  - Total fee: base + BandOracle fee")
-    log("  - Fee can be updated by admin via setOracleFee()")
+access(all) fun testGetAssetConfig() {
+    let flowConfig = BandOracleResolver.getAssetConfig(symbol: "FLOW")
+    Test.assertEqual(true, flowConfig != nil)
+    
+    if let config = flowConfig {
+        Test.assertEqual("FLOW", config.symbol)
+        Test.assertEqual(true, config.enabled)
+        Test.assertEqual(0.01, config.minPrice)
+        Test.assertEqual(1000.0, config.maxPrice)
+        Test.assertEqual(8 as UInt8, config.precision)
+    }
+    
+    let invalidConfig = BandOracleResolver.getAssetConfig(symbol: "INVALID")
+    Test.assertEqual(nil, invalidConfig)
 }
 
-// Test 4: Asset configuration
-access(all) fun testAssetConfigStructure() {
-    log("AssetConfig structure:")
-    log("  - symbol: String (e.g., 'FLOW')")
-    log("  - assetType: Type (vault type from BandOracleConnectors)")
-    log("  - enabled: Bool (whether asset is active)")
-    log("  - minPrice: UFix64 (sanity check lower bound)")
-    log("  - maxPrice: UFix64 (sanity check upper bound)")
-    log("  - precision: UInt8 (decimal precision)")
+access(all) fun testGetOracleFee() {
+    let fee = BandOracleResolver.getOracleFee()
+    Test.assertEqual(true, fee > 0.0)
 }
 
-// Test 5: Resolution criteria types
-access(all) fun testResolutionCriteriaTypes() {
-    log("ResolutionCriteria structure:")
-    log("  - symbol: String")
-    log("  - targetPrice: UFix64")
-    log("  - comparisonType: String ('ABOVE', 'BELOW', 'BETWEEN')")
-    log("  - targetPrice2: UFix64? (required for 'BETWEEN')")
-    
-    log("\nCriteria validation rules:")
-    log("  - comparisonType must be 'ABOVE', 'BELOW', or 'BETWEEN'")
-    log("  - targetPrice must be > 0.0")
-    log("  - 'BETWEEN' requires targetPrice2 != nil")
-    log("  - For 'BETWEEN': targetPrice2 > targetPrice")
+access(all) fun testIsPaused() {
+    let paused = BandOracleResolver.isPaused()
+    Test.assertEqual(false, paused)
 }
 
-// Test 6: OracleResult structure
-access(all) fun testOracleResultStructure() {
-    log("OracleResult structure returned by checkResolution():")
-    log("  - canResolve: Bool")
-    log("  - outcome: Bool")
-    log("  - currentPrice: UFix64?")
-    log("  - dataTimestamp: UFix64?")
-    log("  - error: String?")
-    log("  - lastUpdate: UFix64")
+// Test ResolutionCriteria creation functions
+access(all) fun testCreatePriceTargetCriteria() {
+    let criteria = BandOracleResolver.createPriceTargetCriteria(
+        symbol: "FLOW",
+        targetPrice: 2.0
+    )
+    
+    Test.assertEqual("FLOW", criteria.symbol)
+    Test.assertEqual(2.0, criteria.targetPrice)
+    Test.assertEqual("ABOVE", criteria.comparisonType)
+    Test.assertEqual(nil, criteria.targetPrice2)
 }
 
-// Test 7: Admin functions
-access(all) fun testAdminFunctions() {
-    log("Admin resource functions:")
-    log("  - pause(): Pause oracle for emergency")
-    log("  - unpause(): Resume oracle operations")
-    log("  - setFeeSource(): Configure DeFiActions.Source for fees")
-    log("  - updateAssetConfig(): Update symbol, limits, enabled status")
-    log("  - addAsset(): Add new asset (must exist in BandOracleConnectors)")
-    log("  - setOracleFee(): Update base oracle fee")
-    log("  - clearRateLimit(): Reset rate limit for specific caller")
+access(all) fun testCreateMinPriceCriteria() {
+    let criteria = BandOracleResolver.createMinPriceCriteria(
+        symbol: "FLOW",
+        minPrice: 1.5
+    )
     
-    log("\nAdmin is stored at: /storage/BandOracleResolverAdmin")
+    Test.assertEqual("FLOW", criteria.symbol)
+    Test.assertEqual(1.5, criteria.targetPrice)
+    Test.assertEqual("ABOVE", criteria.comparisonType)
+    Test.assertEqual(nil, criteria.targetPrice2)
 }
 
-// Test 8: Rate limiting
-access(all) fun testRateLimiting() {
-    log("Rate limiting implementation:")
-    log("  - Tracks calls per hour per caller address")
-    log("  - Maximum: 100 calls per hour")
-    log("  - Keyed by: caller address -> hour timestamp -> count")
-    log("  - Emits RateLimitExceeded event when limit hit")
-    log("  - Admin can clear limits via clearRateLimit()")
+access(all) fun testCreatePriceRangeCriteria() {
+    let criteria = BandOracleResolver.createPriceRangeCriteria(
+        symbol: "FLOW",
+        minPrice: 1.0,
+        maxPrice: 3.0
+    )
+    
+    Test.assertEqual("FLOW", criteria.symbol)
+    Test.assertEqual(1.0, criteria.targetPrice)
+    Test.assertEqual("BETWEEN", criteria.comparisonType)
+    Test.assertEqual(3.0, criteria.targetPrice2!)
 }
 
-// Test 9: Events
-access(all) fun testEvents() {
-    log("Events emitted by BandOracleResolver:")
-    log("\n1. OracleResolutionTriggered")
-    log("   - marketId, symbol, targetPrice, actualPrice")
-    log("   - outcome, timestamp, caller")
+// Test AssetConfig struct methods
+access(all) fun testAssetConfigCreation() {
+    let config = BandOracleResolver.AssetConfig(
+        symbol: "TEST",
+        assetType: Type<@FlowToken.Vault>(),
+        enabled: true,
+        minPrice: 0.1,
+        maxPrice: 100.0,
+        precision: 6
+    )
     
-    log("\n2. OracleResolutionFailed")
-    log("   - marketId, symbol, error")
-    log("   - timestamp, caller")
-    
-    log("\n3. PriceQueried")
-    log("   - symbol, price, timestamp")
-    log("   - dataTimestamp, caller")
-    
-    log("\n4. AssetConfigUpdated")
-    log("   - symbol, enabled, admin")
-    
-    log("\n5. ResolverPaused / ResolverUnpaused")
-    log("   - admin, timestamp")
-    
-    log("\n6. FeeSourceUpdated")
-    log("   - admin, timestamp")
-    
-    log("\n7. RateLimitExceeded")
-    log("   - caller, timestamp")
+    Test.assertEqual("TEST", config.symbol)
+    Test.assertEqual(Type<@FlowToken.Vault>(), config.assetType)
+    Test.assertEqual(true, config.enabled)
+    Test.assertEqual(0.1, config.minPrice)
+    Test.assertEqual(100.0, config.maxPrice)
+    Test.assertEqual(6 as UInt8, config.precision)
 }
 
-// Test 10: Public functions
-access(all) fun testPublicFunctions() {
-    log("Public functions available:")
-    log("\n1. checkResolution(criteria, payment, caller)")
-    log("   - Validates criteria and checks oracle price")
-    log("   - Returns OracleResult dict")
-    log("   - Requires payment >= MIN_PAYMENT")
+access(all) fun testAssetConfigSetEnabled() {
+    let config = BandOracleResolver.AssetConfig(
+        symbol: "TEST",
+        assetType: Type<@FlowToken.Vault>(),
+        enabled: true,
+        minPrice: 0.1,
+        maxPrice: 100.0,
+        precision: 6
+    )
     
-    log("\n2. resolveMarket(marketId, criteria, payment, caller)")
-    log("   - Calls checkResolution internally")
-    log("   - Emits resolution events")
-    log("   - Returns result dict")
+    Test.assertEqual(true, config.enabled)
     
-    log("\n3. getCurrentPrice(symbol, payment, caller)")
-    log("   - Gets current price for symbol")
-    log("   - Returns UFix64")
-    log("   - Validates price bounds")
+    config.setEnabled(false)
+    Test.assertEqual(false, config.enabled)
     
-    log("\n4. isOracleDataRecent(symbol, payment)")
-    log("   - Checks if oracle is ready")
-    log("   - Returns Bool")
-    
-    log("\n5. getSupportedSymbols()")
-    log("   - Returns [String] of enabled assets")
-    
-    log("\n6. getAssetConfig(symbol)")
-    log("   - Returns AssetConfig?")
-    
-    log("\n7. getOracleFee()")
-    log("   - Returns total fee (base + BandOracle)")
-    
-    log("\n8. isPaused()")
-    log("   - Returns Bool")
-    
-    log("\n9. createPriceTargetCriteria(symbol, targetPrice)")
-    log("   - Helper to create 'ABOVE' criteria")
-    
-    log("\n10. createMinPriceCriteria(symbol, minPrice)")
-    log("    - Helper to create 'ABOVE' criteria")
-    
-    log("\n11. createPriceRangeCriteria(symbol, minPrice, maxPrice)")
-    log("    - Helper to create 'BETWEEN' criteria")
-    
-    log("\n12. getAdminStoragePath()")
-    log("    - Returns StoragePath for Admin resource")
+    config.setEnabled(true)
+    Test.assertEqual(true, config.enabled)
 }
 
-// Test 11: Integration with BandOracleConnectors
-access(all) fun testBandOracleIntegration() {
-    log("BandOracleConnectors integration:")
-    log("  - Uses assetSymbols mapping for Type -> Symbol")
-    log("  - Creates PriceOracle with staleThreshold = MAX_DATA_AGE")
-    log("  - Requires feeSource configured with FlowToken")
-    log("  - Calls priceOracle.price(ofToken) for price data")
-    log("  - Validates prices against assetConfig bounds")
+access(all) fun testAssetConfigUpdatePriceLimits() {
+    let config = BandOracleResolver.AssetConfig(
+        symbol: "TEST",
+        assetType: Type<@FlowToken.Vault>(),
+        enabled: true,
+        minPrice: 0.1,
+        maxPrice: 100.0,
+        precision: 6
+    )
+    
+    Test.assertEqual(0.1, config.minPrice)
+    Test.assertEqual(100.0, config.maxPrice)
+    
+    config.updatePriceLimits(minPrice: 0.5, maxPrice: 200.0)
+    Test.assertEqual(0.5, config.minPrice)
+    Test.assertEqual(200.0, config.maxPrice)
 }
 
-// Test 12: Security features
-access(all) fun testSecurityFeatures() {
-    log("Security features implemented:")
-    log("  1. Pause/unpause for emergency situations")
-    log("  2. Rate limiting per caller (100/hour)")
-    log("  3. Price sanity bounds checking")
-    log("  4. Admin-only configuration functions")
-    log("  5. Payment validation (minimum required)")
-    log("  6. Symbol validation (must be enabled)")
-    log("  7. Fee source validation (must be FlowToken)")
-    log("  8. Criteria validation (type, ranges)")
+// Test ResolutionCriteria validation
+access(all) fun testResolutionCriteriaValidation() {
+    // Valid ABOVE criteria
+    let validAbove = BandOracleResolver.ResolutionCriteria(
+        symbol: "FLOW",
+        targetPrice: 2.0,
+        comparisonType: "ABOVE",
+        targetPrice2: nil
+    )
+    Test.assertEqual("FLOW", validAbove.symbol)
+    
+    // Valid BELOW criteria
+    let validBelow = BandOracleResolver.ResolutionCriteria(
+        symbol: "FLOW",
+        targetPrice: 2.0,
+        comparisonType: "BELOW",
+        targetPrice2: nil
+    )
+    Test.assertEqual("BELOW", validBelow.comparisonType)
+    
+    // Valid BETWEEN criteria
+    let validBetween = BandOracleResolver.ResolutionCriteria(
+        symbol: "FLOW",
+        targetPrice: 1.0,
+        comparisonType: "BETWEEN",
+        targetPrice2: 3.0
+    )
+    Test.assertEqual("BETWEEN", validBetween.comparisonType)
+    Test.assertEqual(3.0, validBetween.targetPrice2!)
 }
 
-// Test 13: Error handling
-access(all) fun testErrorHandling() {
-    log("Error handling scenarios:")
-    log("  - Oracle paused -> 'Oracle resolver is paused'")
-    log("  - Insufficient payment -> 'Payment insufficient'")
-    log("  - Rate limit exceeded -> 'Rate limit exceeded. Maximum 100 calls per hour'")
-    log("  - Unsupported symbol -> 'Unsupported or disabled symbol'")
-    log("  - No fee source -> 'Oracle fee source not configured'")
-    log("  - Price out of bounds -> 'Price outside expected range'")
-    log("  - Failed price retrieval -> 'Failed to retrieve price data'")
-    log("  - Invalid criteria -> Precondition failures")
+// Test OracleResult creation
+access(all) fun testOracleResultCreation() {
+    let successResult = BandOracleResolver.OracleResult(
+        canResolve: true,
+        outcome: true,
+        currentPrice: 2.5,
+        dataTimestamp: 1234567890.0,
+        error: nil
+    )
+    
+    Test.assertEqual(true, successResult.canResolve)
+    Test.assertEqual(true, successResult.outcome)
+    Test.assertEqual(2.5, successResult.currentPrice!)
+    Test.assertEqual(1234567890.0, successResult.dataTimestamp!)
+    Test.assertEqual(nil, successResult.error)
+    Test.assertEqual(true, successResult.lastUpdate > 0.0)
+    
+    let errorResult = BandOracleResolver.OracleResult(
+        canResolve: false,
+        outcome: false,
+        currentPrice: nil,
+        dataTimestamp: nil,
+        error: "Test error"
+    )
+    
+    Test.assertEqual(false, errorResult.canResolve)
+    Test.assertEqual(false, errorResult.outcome)
+    Test.assertEqual(nil, errorResult.currentPrice)
+    Test.assertEqual(nil, errorResult.dataTimestamp)
+    Test.assertEqual("Test error", errorResult.error!)
 }
 
-// Test 14: Deployment checklist
-access(all) fun testDeploymentChecklist() {
-    log("Production deployment checklist:")
-    log("  [ ] 1. Deploy BandOracleResolver contract")
-    log("  [ ] 2. Configure fee source with FlowToken vault")
-    log("  [ ] 3. Fund fee source with sufficient FLOW")
-    log("  [ ] 4. Test with checkResolution on testnet")
-    log("  [ ] 5. Configure asset price bounds if needed")
-    log("  [ ] 6. Set oracle fee if different from default")
-    log("  [ ] 7. Verify rate limits are appropriate")
-    log("  [ ] 8. Test pause/unpause functionality")
-    log("  [ ] 9. Monitor events for proper logging")
-    log("  [ ] 10. Document Admin resource storage for ops")
+// Test isOracleDataRecent function
+access(all) fun testIsOracleDataRecent() {
+    let flowVault <- FlowToken.createEmptyVault(vaultType: Type<@FlowToken.Vault>())
+    
+    // Test with supported symbol
+    let isRecentFlow = BandOracleResolver.isOracleDataRecent(
+        symbol: "FLOW",
+        payment: <- flowVault
+    )
+    // Should be false because fee source is not configured in test environment
+    Test.assertEqual(false, isRecentFlow)
+    
+    // Test with unsupported symbol
+    let flowVault2 <- FlowToken.createEmptyVault(vaultType: Type<@FlowToken.Vault>())
+    let isRecentInvalid = BandOracleResolver.isOracleDataRecent(
+        symbol: "INVALID",
+        payment: <- flowVault2
+    )
+    Test.assertEqual(false, isRecentInvalid)
 }
 
-// Test 15: Integration with PredictionMarket
-access(all) fun testPredictionMarketIntegration() {
-    log("Integration with PredictionMarket:")
-    log("  - PredictionMarket.resolveMarketWithOracle() calls:")
-    log("    BandOracleResolver.resolveMarket()")
-    log("  - Converts TrixyTypes.OracleResolutionCriteria to:")
-    log("    BandOracleResolver.ResolutionCriteria")
-    log("  - Passes caller address for rate limiting")
-    log("  - Handles result dict with canResolve, outcome, error")
-    log("  - Falls back to manual resolution after deadline")
+// Test admin storage path
+access(all) fun testGetAdminStoragePath() {
+    let storagePath = BandOracleResolver.getAdminStoragePath()
+    Test.assertEqual(/storage/BandOracleResolverAdmin, storagePath)
 }
