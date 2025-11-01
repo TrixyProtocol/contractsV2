@@ -85,10 +85,12 @@ access(all) contract TrixyProtocol {
             endTime: UFix64,
             yieldProtocol: String,
             resolutionMethod: TrixyTypes.ResolutionMethod,
-            oracleCriteria: TrixyTypes.OracleResolutionCriteria?
+            oracleCriteria: TrixyTypes.OracleResolutionCriteria?,
+            adminRef: &Admin
         ): UInt64 {
             pre {
                 !TrixyProtocol.paused: "Protocol is paused"
+                adminRef.owner!.address == TrixyProtocol.protocolAdmin: "Only admin can create markets"
                 endTime > getCurrentBlock().timestamp: "End time must be in future"
                 endTime < getCurrentBlock().timestamp + 31536000.0: "Market duration max 1 year"
                 resolutionMethod == TrixyTypes.ResolutionMethod.Manual || oracleCriteria != nil: "Oracle criteria required for oracle resolution"
