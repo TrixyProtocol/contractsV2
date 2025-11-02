@@ -22,9 +22,9 @@ transaction(
     targetPrice: UFix64?,
     comparisonType: String?,
     targetPrice2: UFix64?,
-    resolutionDeadline: UFix64?
+    resolutionDeadline: UFix64?,
+    scheduleAutomaticResolution: Bool
 ) {
-
     let adminRef: &TrixyProtocol.Admin
     let userMarketCollection: &TrixyProtocol.MarketCollection
 
@@ -67,7 +67,8 @@ transaction(
             yieldProtocol: yieldProtocol,
             resolutionMethod: resMethod,
             oracleCriteria: oracleCriteria,
-            adminRef: self.adminRef
+            adminRef: self.adminRef,
+            scheduleAutomaticResolution: scheduleAutomaticResolution
         )
 
         log("Admin created market with ID: ".concat(marketId.toString()).concat(" in user ").concat(userAddress.toString()).concat("'s collection"))

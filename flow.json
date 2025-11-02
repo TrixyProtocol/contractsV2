@@ -36,6 +36,12 @@
 				"testing": "0000000000000007"
 			}
 		},
+		"TrixyScheduledTransactionHandler": {
+			"source": "./contracts/core/TrixyScheduledTransactionHandler.cdc",
+			"aliases": {
+				"testing": "0000000000000007"
+			}
+		},
 		"TrixyTypes": {
 			"source": "./contracts/core/TrixyTypes.cdc",
 			"aliases": {
@@ -366,6 +372,7 @@
 				"IncrementAdapter",
 				"PredictionMarket",
 				"BandOracleResolver",
+				"TrixyScheduledTransactionHandler",
 				"TrixyProtocol"
 			],
 			"mainnet-account": [
@@ -380,6 +387,7 @@
 				"IncrementAdapter",
 				"PredictionMarket",
 				"BandOracleResolver",
+				"TrixyScheduledTransactionHandler",
 				"TrixyProtocol"
 			]
 		},
@@ -391,6 +399,7 @@
 				"IncrementAdapter",
 				"PredictionMarket",
 				"BandOracleResolver",
+				"TrixyScheduledTransactionHandler",
 				"TrixyProtocol"
 			]
 		}

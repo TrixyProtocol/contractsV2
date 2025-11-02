@@ -21,6 +21,7 @@ deps:
 lint:
 	flow cadence lint ./contracts/**/*.cdc
 	flow cadence lint ./tests/**/*.cdc
+	flow cadence lint ./transactions/**/*.cdc
 
 .PHONY: check
 check: lint test

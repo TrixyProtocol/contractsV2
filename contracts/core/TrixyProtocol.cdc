@@ -3,6 +3,8 @@ import "FungibleToken"
 import "PredictionMarket"
 import "TrixyEvents"
 import "TrixyTypes"
+import "FlowTransactionScheduler"
+import "FlowTransactionSchedulerUtils"
 
 access(all) contract TrixyProtocol {
 
@@ -11,6 +13,8 @@ access(all) contract TrixyProtocol {
     access(all) let AdminStoragePath: StoragePath
     access(all) let MarketCollectionStoragePath: StoragePath
     access(all) let MarketCollectionPublicPath: PublicPath
+    access(all) let SchedulerManagerStoragePath: StoragePath
+    access(all) let SchedulerManagerPublicPath: PublicPath
 
     /* --- STATE --- */
 
@@ -27,6 +31,8 @@ access(all) contract TrixyProtocol {
     access(all) event FeePercentUpdated(oldFee: UFix64, newFee: UFix64, admin: Address)
     access(all) event FeesWithdrawn(amount: UFix64, recipient: Address)
     access(all) event MarketCollectionCreated(owner: Address)
+    access(all) event MarketResolutionScheduled(marketId: UInt64, scheduledTime: UFix64, resolutionType: String)
+    access(all) event YieldHarvestScheduled(marketId: UInt64, scheduledTime: UFix64)
 
     /* --- INTERFACES --- */
 
@@ -86,7 +92,8 @@ access(all) contract TrixyProtocol {
             yieldProtocol: String,
             resolutionMethod: TrixyTypes.ResolutionMethod,
             oracleCriteria: TrixyTypes.OracleResolutionCriteria?,
-            adminRef: &Admin
+            adminRef: &Admin,
+            scheduleAutomaticResolution: Bool
         ): UInt64 {
             pre {
                 !TrixyProtocol.paused: "Protocol is paused"
@@ -111,6 +118,14 @@ access(all) contract TrixyProtocol {
             )
 
             self.markets[marketId] <-! market
+
+            if scheduleAutomaticResolution {
+                emit MarketResolutionScheduled(
+                    marketId: marketId,
+                    scheduledTime: endTime + 300.0,
+                    resolutionType: resolutionMethod == TrixyTypes.ResolutionMethod.Oracle ? "oracle" : "expire"
+                )
+            }
 
             return marketId
         }
@@ -218,6 +233,19 @@ access(all) contract TrixyProtocol {
             let marketRef = &self.markets[marketId] as &PredictionMarket.MarketResource?
             return <- marketRef!.emergencyWithdraw()
         }
+
+        access(contract) fun scheduleMarketResolution(
+            marketId: UInt64,
+            endTime: UFix64,
+            resolutionMethod: TrixyTypes.ResolutionMethod,
+            oracleCriteria: TrixyTypes.OracleResolutionCriteria?
+        ) {
+            emit MarketResolutionScheduled(
+                marketId: marketId,
+                scheduledTime: endTime + 300.0,
+                resolutionType: resolutionMethod == TrixyTypes.ResolutionMethod.Oracle ? "oracle" : "expire"
+            )
+        }
     }
 
     /* --- PUBLIC FUNCTIONS --- */
@@ -239,10 +267,13 @@ access(all) contract TrixyProtocol {
         return self.protocolAdmin
     }
 
+
     init() {
         self.AdminStoragePath = /storage/TrixyAdmin
         self.MarketCollectionStoragePath = /storage/TrixyMarketCollection
         self.MarketCollectionPublicPath = /public/TrixyMarketCollection
+        self.SchedulerManagerStoragePath = /storage/TrixySchedulerManager
+        self.SchedulerManagerPublicPath = /public/TrixySchedulerManager
 
         self.nextMarketId = 0
         self.protocolFeePercent = 0.02

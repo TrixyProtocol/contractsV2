@@ -64,7 +64,8 @@ transaction(
             yieldProtocol: yieldProtocol,
             resolutionMethod: resMethod,
             oracleCriteria: oracleCriteria,
-            adminRef: self.adminRef
+            adminRef: self.adminRef,
+            scheduleAutomaticResolution: false
         )
 
         log("Market created with ID: ".concat(marketId.toString()))
